@@ -37,6 +37,7 @@ function generatePlane() {
   }
 }
 
+const reycaster = new THREE.Raycaster();
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(
   75,
@@ -52,20 +53,13 @@ document.body.appendChild(renderer.domElement); //canvas object
 new OrbitControls(camera, renderer.domElement);
 camera.position.z = 5;
 
-// TEST BOX MESH
-// const boxGeometry = new THREE.BoxGeometry(1, 1, 1); // width, length, height
-// const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-// const boxMesh = new THREE.Mesh(boxGeometry, material);
-// scene.add(boxMesh);
-
 // to use mesh, we need two parameters (geometry, material);
-
 const planeGeometry = new THREE.PlaneGeometry(5, 5, 10, 10);
 const planeMaterial = new THREE.MeshPhongMaterial({
   // MeshPhongMaterial => react with light and its need light to be show
-  color: 0xff0000,
   side: THREE.DoubleSide, // give the botht side color
   flatShading: THREE.FlatShading, // give it paper effect when z index is changed by the loop
+  vertexColors: true, // to show up the new colors that we set in the attribute
 });
 const PlaneMesh = new THREE.Mesh(planeGeometry, planeMaterial);
 scene.add(PlaneMesh);
@@ -85,27 +79,58 @@ for (let i = 0; i < array.length; i += 3) {
   let x = array[i];
   let y = array[i + 1];
   let z = array[i + 2];
-
   array[i + 2] = z + Math.random();
 }
 
-// the same animation of canvas OBJ
-function animate() {
-  requestAnimationFrame(animate);
-  renderer.render(scene, camera);
-  // PlaneMesh.rotation.x += 0.01;
-  // PlaneMesh.rotation.y += 0.01;
+// set color attribute for every piece of the plane
+let colors = [];
+for (let i = 0; i < PlaneMesh.geometry.attributes.position.count; i++) {
+  colors.push(0, 0.19, 0.4);
 }
 
-animate();
+PlaneMesh.geometry.setAttribute(
+  "color",
+  new THREE.BufferAttribute(new Float32Array(colors), 3)
+);
 
+// set mouse coordinates
 const mouse = {
   x: undefined,
   y: undefined,
 };
 
+function animate() {
+  requestAnimationFrame(animate);
+  renderer.render(scene, camera);
+  reycaster.setFromCamera(mouse, camera);
+  const intersects = reycaster.intersectObject(PlaneMesh);
+
+  if (intersects.length > 0) {
+    const { color } = intersects[0].object.geometry.attributes;
+
+    // vertice 1
+    color.setX(intersects[0].face.a, 0.1);
+    color.setY(intersects[0].face.a, 0.5);
+    color.setZ(intersects[0].face.a, 1);
+
+    // vertice 2
+    color.setX(intersects[0].face.b, 0.1);
+    color.setY(intersects[0].face.b, 0.5);
+    color.setZ(intersects[0].face.b, 1);
+
+    // vertice 3
+    color.setX(intersects[0].face.c, 0.1);
+    color.setY(intersects[0].face.c, 0.5);
+    color.setZ(intersects[0].face.c, 1);
+
+    // UPDATE COLOR
+    color.needsUpdate = true;
+  }
+}
+
+animate();
+
 addEventListener("mousemove", function (event) {
   mouse.x = (event.clientX / this.innerWidth) * 2 - 1;
   mouse.y = -(event.clientY / this.innerHeight) * 2 + 1;
-  console.log(mouse);
 });
