@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import * as dat from "dat.gui";
+import { OrbitControls } from "https://unpkg.com/three@0.126.1/examples/jsm/controls/OrbitControls.js";
 
 // set the GUI to the animation
 const gui = new dat.GUI();
@@ -44,9 +45,11 @@ const camera = new THREE.PerspectiveCamera(
   1000 // animation shown up from 1 to 1000 pixels
 );
 const renderer = new THREE.WebGL1Renderer();
+
 renderer.setSize(innerWidth, innerHeight);
 renderer.setPixelRatio(devicePixelRatio); // to fix all the shapes pixel problems
 document.body.appendChild(renderer.domElement); //canvas object
+new OrbitControls(camera, renderer.domElement);
 camera.position.z = 5;
 
 // TEST BOX MESH
@@ -68,8 +71,13 @@ const PlaneMesh = new THREE.Mesh(planeGeometry, planeMaterial);
 scene.add(PlaneMesh);
 
 const light = new THREE.DirectionalLight(0xffffff, 1);
-light.position.set(0, 0, 1);
+light.position.set(0, 0, 1); // z = 1 ==> for the front face
 scene.add(light);
+
+// lighting the backside for ORBITS ROTATING
+const backLight = new THREE.DirectionalLight(0xffffff, 1);
+backLight.position.set(0, 0, -1); // z = 1 ==> for the back face
+scene.add(backLight);
 
 // to change the z indexes of the plane and make the shape different
 const { array } = PlaneMesh.geometry.attributes.position;
