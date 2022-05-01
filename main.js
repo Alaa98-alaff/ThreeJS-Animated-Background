@@ -1,4 +1,40 @@
 import * as THREE from "three";
+import * as dat from "dat.gui";
+
+// set the GUI to the animation
+const gui = new dat.GUI();
+const world = {
+  plane: {
+    width: 10,
+    height: 10,
+    widthSegments: 10,
+    heightSegments: 10,
+  },
+};
+
+gui.add(world.plane, "width", 1, 20).onChange(generatePlane);
+gui.add(world.plane, "height", 1, 20).onChange(generatePlane);
+gui.add(world.plane, "widthSegments", 1, 50).onChange(generatePlane);
+gui.add(world.plane, "heightSegments", 1, 50).onChange(generatePlane);
+
+function generatePlane() {
+  PlaneMesh.geometry.dispose();
+  PlaneMesh.geometry = new THREE.PlaneGeometry(
+    world.plane.width,
+    world.plane.height,
+    world.plane.widthSegments,
+    world.plane.heightSegments
+  );
+
+  // to change the z indexes of the plane and make the shape different
+  const { array } = PlaneMesh.geometry.attributes.position;
+  for (let i = 0; i < array.length; i += 3) {
+    let x = array[i];
+    let y = array[i + 1];
+    let z = array[i + 2];
+    array[i + 2] = z + Math.random();
+  }
+}
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(
@@ -26,7 +62,7 @@ const planeMaterial = new THREE.MeshPhongMaterial({
   // MeshPhongMaterial => react with light and its need light to be show
   color: 0xff0000,
   side: THREE.DoubleSide, // give the botht side color
-  // flatShading: THREE.FlatShading, // give it paper effect when z index is changed by the loop
+  flatShading: THREE.FlatShading, // give it paper effect when z index is changed by the loop
 });
 const PlaneMesh = new THREE.Mesh(planeGeometry, planeMaterial);
 scene.add(PlaneMesh);
@@ -35,8 +71,8 @@ const light = new THREE.DirectionalLight(0xffffff, 1);
 light.position.set(0, 0, 1);
 scene.add(light);
 
+// to change the z indexes of the plane and make the shape different
 const { array } = PlaneMesh.geometry.attributes.position;
-
 for (let i = 0; i < array.length; i += 3) {
   let x = array[i];
   let y = array[i + 1];
