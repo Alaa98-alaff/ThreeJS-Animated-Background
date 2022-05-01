@@ -98,3 +98,14 @@ function animate() {
 }
 
 animate();
+
+const mouse = {
+  x: undefined,
+  y: undefined,
+};
+
+addEventListener("mousemove", function (event) {
+  mouse.x = (event.clientX / this.innerWidth) * 2 - 1;
+  mouse.y = -(event.clientY / this.innerHeight) * 2 + 1;
+  console.log(mouse);
+});
