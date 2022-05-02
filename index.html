@@ -5,10 +5,38 @@
     <link rel="icon" type="image/svg+xml" href="favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="./style.css" />
+    <link
+      href="https://unpkg.com/tailwindcss@^2.0/dist/tailwind.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Exo+2:ital@1&family=Open+Sans:wght@300&display=swap"
+      rel="stylesheet"
+    />
     <title>Three js background</title>
   </head>
+  <style>
+    body {
+      margin: 0;
+      font-family: "Exo 2", sans-serif;
+    }
+  </style>
   <body>
-    <div id="app"></div>
+    <div id="app relative">
+      <div
+        class="absolute text-white text-center"
+        style="top: 50%; left: 50%; transform: translate(-50%, -50%)"
+      >
+        <h1 class="underline text-2xl mb-2">Alaa Alaff.</h1>
+        <h1 class="text-5xl uppercase">For more works</h1>
+        <a
+          href="https://github.com/Alaa98-alaff"
+          class="border px-4 py-2 rounded-lg text-sm uppercase mt-5 inline-block hover:bg-white hover:text-gray-800"
+        >
+          VISIT
+        </a>
+      </div>
+    </div>
     <script type="module" src="/main.js"></script>
   </body>
 </html>

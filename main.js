@@ -7,49 +7,60 @@ import { OrbitControls } from "https://unpkg.com/three@0.126.1/examples/jsm/cont
 const gui = new dat.GUI();
 const world = {
   plane: {
-    width: 10,
-    height: 10,
-    widthSegments: 10,
-    heightSegments: 10,
+    width: 400,
+    height: 400,
+    widthSegments: 50,
+    heightSegments: 50,
   },
 };
-
-gui.add(world.plane, "width", 1, 20).onChange(generatePlane);
-gui.add(world.plane, "height", 1, 20).onChange(generatePlane);
-gui.add(world.plane, "widthSegments", 1, 50).onChange(generatePlane);
-gui.add(world.plane, "heightSegments", 1, 50).onChange(generatePlane);
+gui.add(world.plane, "width", 1, 500).onChange(generatePlane);
+gui.add(world.plane, "height", 1, 500).onChange(generatePlane);
+gui.add(world.plane, "widthSegments", 1, 100).onChange(generatePlane);
+gui.add(world.plane, "heightSegments", 1, 100).onChange(generatePlane);
 
 function generatePlane() {
-  PlaneMesh.geometry.dispose();
-  PlaneMesh.geometry = new THREE.PlaneGeometry(
+  planeMesh.geometry.dispose();
+  planeMesh.geometry = new THREE.PlaneGeometry(
     world.plane.width,
     world.plane.height,
     world.plane.widthSegments,
     world.plane.heightSegments
   );
 
-  // to change the z indexes of the plane and make the shape different
-  const { array } = PlaneMesh.geometry.attributes.position;
-  for (let i = 0; i < array.length; i += 3) {
-    let x = array[i];
-    let y = array[i + 1];
-    let z = array[i + 2];
-    array[i + 2] = z + Math.random();
+  // vertice position randomization
+  const { array } = planeMesh.geometry.attributes.position;
+  const randomValues = [];
+  for (let i = 0; i < array.length; i++) {
+    if (i % 3 === 0) {
+      const x = array[i];
+      const y = array[i + 1];
+      const z = array[i + 2];
+
+      array[i] = x + (Math.random() - 0.5) * 3;
+      array[i + 1] = y + (Math.random() - 0.5) * 3;
+      array[i + 2] = z + (Math.random() - 0.5) * 3.5;
+    }
+
+    randomValues.push(Math.random() * Math.PI * 2);
   }
 
+  planeMesh.geometry.attributes.position.randomValues = randomValues;
+  planeMesh.geometry.attributes.position.originalPosition =
+    planeMesh.geometry.attributes.position.array;
+
   // set color attribute for every piece of the plane
-  let colors = [];
-  for (let i = 0; i < PlaneMesh.geometry.attributes.position.count; i++) {
+  const colors = [];
+  for (let i = 0; i < planeMesh.geometry.attributes.position.count; i++) {
     colors.push(0, 0.19, 0.4);
   }
 
-  PlaneMesh.geometry.setAttribute(
+  planeMesh.geometry.setAttribute(
     "color",
     new THREE.BufferAttribute(new Float32Array(colors), 3)
   );
 }
 
-const reycaster = new THREE.Raycaster();
+const raycaster = new THREE.Raycaster();
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(
   75,
@@ -57,66 +68,69 @@ const camera = new THREE.PerspectiveCamera(
   0.1,
   1000 // animation shown up from 1 to 1000 pixels
 );
-const renderer = new THREE.WebGL1Renderer();
+const renderer = new THREE.WebGLRenderer();
 
 renderer.setSize(innerWidth, innerHeight);
-renderer.setPixelRatio(devicePixelRatio); // to fix all the shapes pixel problems
-document.body.appendChild(renderer.domElement); //canvas object
+renderer.setPixelRatio(devicePixelRatio); // to fix pixcel issues in all devices
+document.body.appendChild(renderer.domElement);
+
+// control camera by dragging
 new OrbitControls(camera, renderer.domElement);
-camera.position.z = 5;
+camera.position.z = 50;
 
 // to use mesh, we need two parameters (geometry, material);
-const planeGeometry = new THREE.PlaneGeometry(5, 5, 10, 10);
+const planeGeometry = new THREE.PlaneGeometry(
+  world.plane.width,
+  world.plane.height,
+  world.plane.widthSegments,
+  world.plane.heightSegments
+);
 const planeMaterial = new THREE.MeshPhongMaterial({
   // MeshPhongMaterial => react with light and its need light to be show
   side: THREE.DoubleSide, // give the botht side color
   flatShading: THREE.FlatShading, // give it paper effect when z index is changed by the loop
   vertexColors: true, // to show up the new colors that we set in the attribute
 });
-const PlaneMesh = new THREE.Mesh(planeGeometry, planeMaterial);
-scene.add(PlaneMesh);
+const planeMesh = new THREE.Mesh(planeGeometry, planeMaterial);
+scene.add(planeMesh);
+generatePlane();
 
 const light = new THREE.DirectionalLight(0xffffff, 1);
-light.position.set(0, 0, 1); // z = 1 ==> for the front face
+light.position.set(0, -1, 1);
 scene.add(light);
 
 // lighting the backside for ORBITS ROTATING
 const backLight = new THREE.DirectionalLight(0xffffff, 1);
-backLight.position.set(0, 0, -1); // z = 1 ==> for the back face
+backLight.position.set(0, 0, -1);
 scene.add(backLight);
 
-// to change the z indexes of the plane and make the shape different
-const { array } = PlaneMesh.geometry.attributes.position;
-for (let i = 0; i < array.length; i += 3) {
-  let x = array[i];
-  let y = array[i + 1];
-  let z = array[i + 2];
-  array[i + 2] = z + Math.random();
-}
-
-// set color attribute for every piece of the plane
-let colors = [];
-for (let i = 0; i < PlaneMesh.geometry.attributes.position.count; i++) {
-  colors.push(0, 0.19, 0.4);
-}
-
-PlaneMesh.geometry.setAttribute(
-  "color",
-  new THREE.BufferAttribute(new Float32Array(colors), 3)
-);
-
-// set mouse coordinates
 const mouse = {
   x: undefined,
   y: undefined,
 };
 
+let frame = 0;
 function animate() {
   requestAnimationFrame(animate);
   renderer.render(scene, camera);
-  reycaster.setFromCamera(mouse, camera);
-  const intersects = reycaster.intersectObject(PlaneMesh);
+  raycaster.setFromCamera(mouse, camera);
+  frame += 0.01;
 
+  // to add wavy effect
+  const { array, originalPosition, randomValues } =
+    planeMesh.geometry.attributes.position;
+  for (let i = 0; i < array.length; i += 3) {
+    // x
+    array[i] = originalPosition[i] + Math.cos(frame + randomValues[i]) * 0.01;
+
+    // y
+    array[i + 1] =
+      originalPosition[i + 1] + Math.sin(frame + randomValues[i + 1]) * 0.001;
+  }
+
+  planeMesh.geometry.attributes.position.needsUpdate = true;
+
+  const intersects = raycaster.intersectObject(planeMesh);
   if (intersects.length > 0) {
     const { color } = intersects[0].object.geometry.attributes;
 
@@ -135,9 +149,9 @@ function animate() {
     color.setY(intersects[0].face.c, 0.5);
     color.setZ(intersects[0].face.c, 1);
 
-    // UPDATE COLOR
-    color.needsUpdate = true;
+    intersects[0].object.geometry.attributes.color.needsUpdate = true;
 
+    // handle un-hover color
     const initialColor = {
       r: 0,
       g: 0.19,
@@ -170,8 +184,6 @@ function animate() {
         color.setX(intersects[0].face.c, hoverColor.r);
         color.setY(intersects[0].face.c, hoverColor.g);
         color.setZ(intersects[0].face.c, hoverColor.b);
-
-        // UPDATE COLOR
         color.needsUpdate = true;
       },
     });
@@ -180,7 +192,7 @@ function animate() {
 
 animate();
 
-addEventListener("mousemove", function (event) {
-  mouse.x = (event.clientX / this.innerWidth) * 2 - 1;
-  mouse.y = -(event.clientY / this.innerHeight) * 2 + 1;
+addEventListener("mousemove", (event) => {
+  mouse.x = (event.clientX / innerWidth) * 2 - 1;
+  mouse.y = -(event.clientY / innerHeight) * 2 + 1;
 });
